@@ -86,6 +86,15 @@ def create_new_post(post: Post):
     new_post = curr.fetchone()
     conn.commit()
     return {"new_post": new_post}
+
+@app.post("/fetch_one/{post_id}")
+def get_onepost(post_id: int):
+    curr.execute(""" SELECT * FROM post where id = %s """,(str(post_id)))
+    post = curr.fetchone()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail=f"post with id: {post_id} not found")
+    return {"post": post}
     
 
 @app.get("/posts/{post_id}")
@@ -110,6 +119,16 @@ def post_delete(post_id: int):
     new_posts.pop(index) # type: ignore
     return {"message": "post deleted successfully"}
 
+@app.delete("/delete_post/{post_id}")
+def del_post(post_id:int):
+    curr.execute(""" DELETE FROM post where id = %s returning * """,(str(post_id),))
+    delete_post = curr.fetchone()
+    conn.commit()
+    if delete_post == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail=f"post with id: {post_id} not found")
+    return Response(status_code = status.HTTP_204_NO_CONTENT)
+
 @app.put("/posts/{post_id}")
 def update_post(post_id: int, post: Post):
     index = find_index_post(post_id)
@@ -120,3 +139,16 @@ def update_post(post_id: int, post: Post):
     post_dict['id'] = post_id
     new_posts[index] = post_dict
     return {"message": "post updated successfully"}
+
+@app.put("/update_post/{post_id}")
+def updated_post(post_id:int, post:Post):
+
+    curr.execute(""" UPDATE post SET title = %s, content = %s,
+                  published = %s, WHERE id=%s RETURNING *""",
+                    (post.title, post.content, post.published, str(post_id)))
+    update_post = curr.fetchone()
+    conn.commit()
+    if update_post == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+                            detail=f"post with id: {post_id} not found")
+    return {"data": update_post}
