@@ -144,7 +144,7 @@ def update_post(post_id: int, post: Post):
 def updated_post(post_id:int, post:Post):
 
     curr.execute(""" UPDATE post SET title = %s, content = %s,
-                  published = %s, WHERE id=%s RETURNING *""",
+                  published = %s WHERE id=%s RETURNING *""",
                     (post.title, post.content, post.published, str(post_id)))
     update_post = curr.fetchone()
     conn.commit()
@@ -152,3 +152,4 @@ def updated_post(post_id:int, post:Post):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f"post with id: {post_id} not found")
     return {"data": update_post}
+
