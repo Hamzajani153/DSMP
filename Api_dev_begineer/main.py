@@ -8,18 +8,15 @@ import time
 from sqlalchemy.orm import Session
 import models
 from models import *
+# from . import schemas
+import schemas
+from schemas import *
 from database import engine , get_db
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    # rating: Optional[int] = None
-    # ratings: int | None = None
 
 while True:
     try:
@@ -53,12 +50,6 @@ def find_index_post(id):
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/sqlalchemy")
-def test_post(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
-    return {"Data": posts}
-
-
 @app.post("/items/")
 def create_item():
     return {"hello" : "world"}
@@ -71,7 +62,7 @@ def create_postt(payload: dict = Body(...)):
 
 
 @app.post("/new_post")
-def create_post(new_post:Post):
+def create_post(new_post:PostCreate):
     print(new_post)
     print(new_post.dict())
     print(new_post.model_dump())
@@ -86,7 +77,7 @@ def get_posts():
     return {"posts": posts}
 
 @app.post("/new_posts", status_code= status.HTTP_201_CREATED)
-def create_new_post(post: Post):
+def create_new_post(post: PostCreate):
     
     # This is work but this can cause a sql injection probelem which attacker is used.
     # curr.execute(f"""INSERT INTO post (title, content) VALUES ('{post.title}', '{post.content}')""")
@@ -97,8 +88,8 @@ def create_new_post(post: Post):
     conn.commit()
     return {"new_post": new_post}
 
-@app.post("/postss", status_code= status.HTTP_201_CREATED)
-def create_postss(post:Post , db:Session = Depends(get_db)):
+@app.post("/postss", status_code= status.HTTP_201_CREATED, response_model= schemas.Post)
+def create_postss(post:schemas.PostCreate , db:Session = Depends(get_db)):
     # new_post = models.Post(title = post.title, content = post.content,
     #                         published = post.published)
     new_post = models.Post(**post.model_dump())
@@ -106,7 +97,7 @@ def create_postss(post:Post , db:Session = Depends(get_db)):
     db.commit()
     db.refresh(new_post)
     
-    return {"new_post": new_post}
+    return new_post
     
 
 @app.post("/fetch_one/{post_id}")
@@ -128,7 +119,7 @@ def get_post(post_id: int , db:Session = Depends(get_db)):
                             detail=f"post with id: {post_id} not found")
         # response.status_code = status.HTTP_404_NOT_FOUND
         # return {"detail": f"post with id {post_id} not found"}
-    return {"post": post}
+    return post
 
 
 @app.delete("/posts/{post_id}")
@@ -159,7 +150,7 @@ def del_post(post_id:int , db:Session = Depends(get_db)):
     return {"message": "post deleted successfully"}
 
 @app.put("/posts/{post_id}")
-def update_post(post_id: int, post: Post):
+def update_post(post_id: int, post: PostCreate):
     index = find_index_post(post_id)
     if index is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
@@ -170,7 +161,7 @@ def update_post(post_id: int, post: Post):
     return {"message": "post updated successfully"}
 
 @app.put("/update_post/{post_id}")
-def updated_post(post_id:int, post:Post, db:Session = Depends(get_db)):
+def updated_post(post_id:int, post:PostCreate, db:Session = Depends(get_db)):
 
     # curr.execute(""" UPDATE post SET title = %s, content = %s,
     #               published = %s WHERE id=%s RETURNING *""",
@@ -182,7 +173,15 @@ def updated_post(post_id:int, post:Post, db:Session = Depends(get_db)):
     if updated_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f"post with id: {post_id} not found")
-    post_query.update(post.model_dump(), synchronize_session=False)
+    post_query.update(post.model_dump(), synchronize_session=False) #type: ignore
     db.commit()
     return {"data": post_query.first()}
 
+@app.post("/users/" ,status_code=status.HTTP_201_CREATED,response_model=schemas.UserOut)
+def create_user(user: schemas.UserCreate, db:Session = Depends(get_db)):
+    # new_user = models.User(email = user.email, password = user.password)
+    new_user = models.User(**user.model_dump())
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
