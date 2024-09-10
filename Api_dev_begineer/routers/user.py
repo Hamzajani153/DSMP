@@ -14,9 +14,12 @@ from database import get_db
 from typing import List
 
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/users", 
+    tags=["users"]
+)
 
-@router.post("/users/" ,status_code=status.HTTP_201_CREATED,response_model=schemas.UserOut)
+@router.post("/" ,status_code=status.HTTP_201_CREATED,response_model=schemas.UserOut)
 def create_user(user: schemas.UserCreate, db:Session = Depends(get_db)):
 
     # hash the password
@@ -30,7 +33,7 @@ def create_user(user: schemas.UserCreate, db:Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-@router.get("/users/{user_id}", response_model=schemas.UserOut)
+@router.get("/{user_id}", response_model=schemas.UserOut)
 def get_user(user_id:int , db:Session =Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:

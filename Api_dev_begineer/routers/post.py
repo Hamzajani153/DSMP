@@ -8,7 +8,10 @@ from sqlalchemy.orm import Session
 from database import get_db
 from typing import List
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/posts", #we don't need to write /posts in every path we use / instead
+    tags=["posts"]
+)
 
 @router.post("/add")
 def create_postt(payload: dict = Body(...)):
@@ -66,7 +69,7 @@ def create_postss(post:schemas.PostCreate , db:Session = Depends(get_db)):
 #     return {"post": post}
     
 
-@router.get("/posts/{post_id}")
+@router.get("/{post_id}")
 def get_post(post_id: int , db:Session = Depends(get_db)):
     # post = find_post(post_id)
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
