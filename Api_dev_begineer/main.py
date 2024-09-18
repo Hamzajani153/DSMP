@@ -14,6 +14,7 @@ from schemas import *
 from utils import *
 from database import engine , get_db
 from routers import post , user , auth
+# from main import app
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 models.Base.metadata.create_all(bind=engine)

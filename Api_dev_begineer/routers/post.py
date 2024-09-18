@@ -2,11 +2,13 @@
 import models
 import schemas
 import utils
-from fastapi import FastAPI , Body , Response ,status ,HTTPException , Depends , APIRouter
+from fastapi import FastAPI , Body , Response ,status ,HTTPException , Depends , APIRouter 
 from sqlalchemy.orm import Session
+from fastapi import Depends
 # from ..database import get_db
 from database import get_db
 from typing import List
+import oauth2
 
 router = APIRouter(
     prefix="/posts", #we don't need to write /posts in every path we use / instead
@@ -47,10 +49,12 @@ def create_post(new_post:schemas.PostCreate):
 #     conn.commit()
 #     return {"new_post": new_post}
 
-@router.post("/postss", status_code= status.HTTP_201_CREATED, response_model= schemas.Post)
-def create_postss(post:schemas.PostCreate , db:Session = Depends(get_db)):
+@router.post("/", status_code= status.HTTP_201_CREATED, response_model= schemas.Post)
+def create_postss(post:schemas.PostCreate , db:Session = Depends(get_db),
+                  user_id: int = Depends(oauth2.get_current_user)):
     # new_post = models.Post(title = post.title, content = post.content,
     #                         published = post.published)
+    print(user_id)
     new_post = models.Post(**post.model_dump())
     db.add(new_post)
     db.commit()
