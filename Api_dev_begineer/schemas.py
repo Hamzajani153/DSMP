@@ -24,6 +24,7 @@ class Post(BaseModel):
     published: bool = True
     id: int 
     created_at: datetime 
+    owner_id : int
 
     class Config:
         orm_mode = True

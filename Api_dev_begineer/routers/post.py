@@ -55,8 +55,8 @@ def create_postss(post:schemas.PostCreate , db:Session = Depends(get_db),
                   current_user: int = Depends(oauth2.get_current_user)):
     # new_post = models.Post(title = post.title, content = post.content,
     #                         published = post.published)
-    print(current_user.email) # type: ignore
-    new_post = models.Post(**post.model_dump())
+    print(current_user.id) # type: ignore
+    new_post = models.Post(owner_id = current_user.id,**post.model_dump()) # type: ignore
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -78,6 +78,7 @@ def create_postss(post:schemas.PostCreate , db:Session = Depends(get_db),
 def get_post(post_id: int , db:Session = Depends(get_db),
               current_user: int = Depends(oauth2.get_current_user)):
     # post = find_post(post_id)
+    
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
