@@ -2,7 +2,7 @@
 import models
 import schemas
 import utils
-from fastapi import FastAPI , Body , Response ,status ,HTTPException , Depends , APIRouter 
+from fastapi import FastAPI , Body , Response ,status ,HTTPException , Depends , APIRouter
 from sqlalchemy.orm import Session
 from fastapi import Depends
 # from ..database import get_db
@@ -106,15 +106,24 @@ def del_post(post_id:int , db:Session = Depends(get_db),
 #     delete_post = curr.fetchone()
 #     conn.commit()
 #     if delete_post == None:
-    delete_post = db.query(models.Post).filter(models.Post.id == post_id)
-    print(delete_post)
-    if delete_post.first() == None:
+    post_query = db.query(models.Post).filter(models.Post.id == post_id)
+
+    delete_post = post_query.first()
+
+    if delete_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f"post with id: {post_id} not found")
     
-    delete_post.delete(synchronize_session=False)
+    
+    if delete_post.owner_id != current_user.id: # type: ignore
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="NotAuthorized")
+
+
+    
+    post_query.delete(synchronize_session=False)
     db.commit()
-    return {"message": "post deleted successfully"}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # @router.put("/posts/{post_id}")
 # def update_post(post_id: int, post: PostCreate):
@@ -141,6 +150,11 @@ def updated_post(post_id:int, post:schemas.PostCreate, db:Session = Depends(get_
     if updated_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f"post with id: {post_id} not found")
-    post_query.update(post.model_dump(), synchronize_session=False) #type: ignore
+    
+    if updated_post.owner_id != current_user.id: # type: ignore
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail="NotAuthorized")
+
+    post_query.update(post.dict(), synchronize_session=False) #type: ignore
     db.commit()
     return {"data": post_query.first()}
