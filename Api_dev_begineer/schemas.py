@@ -18,6 +18,14 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     pass
 
+class UserOut(BaseModel):
+    email: EmailStr
+    id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
 class Post(BaseModel):
     title: str
     content: str
@@ -25,6 +33,7 @@ class Post(BaseModel):
     id: int 
     created_at: datetime 
     owner_id : int
+    owner: UserOut
 
     class Config:
         orm_mode = True
@@ -33,12 +42,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
-class UserOut(BaseModel):
-    email: EmailStr
-    id: int
 
-    class Config:
-        orm_mode = True
 
 class Userlogin(BaseModel):
     email: EmailStr

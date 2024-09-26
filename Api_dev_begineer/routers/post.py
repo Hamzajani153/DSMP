@@ -3,6 +3,7 @@ import models
 import schemas
 import utils
 from fastapi import FastAPI , Body , Response ,status ,HTTPException , Depends , APIRouter
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from fastapi import Depends
 # from ..database import get_db
@@ -74,11 +75,10 @@ def create_postss(post:schemas.PostCreate , db:Session = Depends(get_db),
 #     return {"post": post}
     
 
-@router.get("/{post_id}")
-def get_post(post_id: int , db:Session = Depends(get_db),
+@router.get("/{post_id}", response_model = schemas.Post)
+def get_one_posts(post_id: int , db:Session = Depends(get_db),
               current_user: int = Depends(oauth2.get_current_user)):
     # post = find_post(post_id)
-    
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
@@ -86,6 +86,17 @@ def get_post(post_id: int , db:Session = Depends(get_db),
         # response.status_code = status.HTTP_404_NOT_FOUND
         # return {"detail": f"post with id {post_id} not found"}
     return post
+
+@router.get("/", response_model = List[schemas.Post]) 
+def get_posts( db:Session = Depends(get_db),
+              current_user: int = Depends(oauth2.get_current_user),limit: int = 10, skip: int = 0,search: Optional[str] = ""):
+    # post = find_post(post_id)
+    print(limit)
+    post = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    # post = db.query(models.Post).filter(models.Post.owner_id == current_user.id).limit(limit).offset(skip).all() # type: ignore
+
+    return post
+
 
 
 # @router.delete("/posts/{post_id}")
