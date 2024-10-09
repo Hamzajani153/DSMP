@@ -9,6 +9,7 @@ from fastapi import Depends
 # from ..database import get_db
 from database import get_db
 from typing import List
+from sqlalchemy import func
 import oauth2
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
@@ -87,7 +88,8 @@ def get_one_posts(post_id: int , db:Session = Depends(get_db),
         # return {"detail": f"post with id {post_id} not found"}
     return post
 
-@router.get("/", response_model = List[schemas.Post]) 
+# @router.get("/", response_model = List[schemas.Post]) 
+@router.get("/", response_model= List[schemas.PostOut]) 
 def get_posts( db:Session = Depends(get_db),
               current_user: int = Depends(oauth2.get_current_user),limit: int = 10, skip: int = 0,search: Optional[str] = ""):
     # post = find_post(post_id)
@@ -95,7 +97,12 @@ def get_posts( db:Session = Depends(get_db),
     post = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
     # post = db.query(models.Post).filter(models.Post.owner_id == current_user.id).limit(limit).offset(skip).all() # type: ignore
 
-    return post
+    result = db.query(models.Post , func.count(models.Vote.post_id).label
+                      ("votes")).join(models.Vote , models.Vote.post_id == models.Post.id, 
+                      isouter = True).group_by(models.Post.id).all()
+    print(result)
+
+    return result
 
 
 
